@@ -1,45 +1,63 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Box, Button, Center, FlatList, NativeBaseProvider, Text } from 'native-base';
-import React from 'react';
-import { RootStackParamList } from '../navigation/AppNavigator'; // Importação da tipagem correta
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import axios from 'axios';
 
-type ConsultationsListScreenNavigationProp = NativeStackNavigationProp<
-    RootStackParamList,
-    'ConsultationsList'
->;
+interface Consultation {
+  id: number;
+  date: string;
+  doctor: string;
+  specialty: string;
+  status: string;
+  username: string;
+}
 
-type Props = {
-    navigation: ConsultationsListScreenNavigationProp;
+const ConsultationsListScreen = () => {
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+
+  useEffect(() => {
+    // Fetch consultations from the backend
+    axios.get('http://localhost:3000/api/consultations')
+      .then((response) => {
+        setConsultations(response.data.consultations);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar consultas:', error);
+      });
+  }, []);
+
+  const renderItem = ({ item }: { item: Consultation }) => (
+    <View style={styles.consultationItem}>
+      <Text>Paciente: {item.username}</Text>
+      <Text>Data: {item.date}</Text>
+      <Text>Médico: {item.doctor}</Text>
+      <Text>Especialidade: {item.specialty}</Text>
+      <Text>Status: {item.status}</Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={consultations}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+      />
+    </View>
+  );
 };
 
-const mockConsultations = [
-    { id: '1', doctor: 'Dr. João', date: '10/10/2024', status: 'Confirmada' },
-    { id: '2', doctor: 'Dra. Maria', date: '12/10/2024', status: 'Pendente' },
-];
-
-const ConsultationsListScreen = ({ navigation }: Props) => {
-    return (
-        <NativeBaseProvider>
-            <Center flex={1} bg="white">
-                <Box>
-                    <FlatList
-                        data={mockConsultations}
-                        renderItem={({ item }) => (
-                            <Box borderBottomWidth="1" mb={4} p={2}>
-                                <Text>Consulta com {item.doctor}</Text>
-                                <Text>Data: {item.date}</Text>
-                                <Text>Status: {item.status}</Text>
-                                <Button mt={2} onPress={() => navigation.navigate('ScheduleConsultation')}>
-                                    Detalhes
-                                </Button>
-                            </Box>
-                        )}
-                        keyExtractor={(item) => item.id}
-                    />
-                </Box>
-            </Center>
-        </NativeBaseProvider>
-    );
-};
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  consultationItem: {
+    padding: 16,
+    marginVertical: 8,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+  },
+});
 
 export default ConsultationsListScreen;
